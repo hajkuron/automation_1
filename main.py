@@ -10,8 +10,10 @@ import time
 from selenium.webdriver.common.keys import Keys
 import pandas as pd
 from datetime import datetime
+from prefect import task, flow
 
 
+@task
 def initialize_driver():
     """Initialize and return the Chrome driver"""
     chrome_data_dir = os.path.expanduser("~/linkedin_chrome_data")
@@ -30,6 +32,7 @@ def initialize_driver():
     return driver, WebDriverWait(driver, 20)
 
 
+@task
 def load_commented_posts():
     """Load previously commented posts from CSV"""
     csv_file = 'commented_posts.csv'
@@ -37,6 +40,7 @@ def load_commented_posts():
         return pd.read_csv(csv_file)['author'].tolist()
     return []
 
+@task
 def save_commented_post(author):
     """Save newly commented post to CSV"""
     csv_file = 'commented_posts.csv'
@@ -49,6 +53,7 @@ def save_commented_post(author):
     df.to_csv(csv_file, index=False)
 
 
+@task
 def collect_posts(driver, wait):
     """Collect and return post details"""
     try:
@@ -81,6 +86,7 @@ def collect_posts(driver, wait):
         return []
 
 
+@task
 def comment_on_posts(driver, wait, post_details):
     """Comment on collected posts"""
     for i, post_to_click in enumerate(post_details):
@@ -158,7 +164,7 @@ def comment_on_posts(driver, wait, post_details):
             continue
 
 
-
+@flow(name="LinkedIn Welcome Bot")
 def main_flow():
     driver, wait = initialize_driver()
     try:
