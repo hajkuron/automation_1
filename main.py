@@ -11,9 +11,11 @@ from selenium.webdriver.common.keys import Keys
 import pandas as pd
 from datetime import datetime
 from prefect import task, flow
+from prefect.tasks import task_input_hash
+from datetime import timedelta
 
 
-@task
+@task(cache_key_fn=None)  # Disable caching for driver initialization
 def initialize_driver():
     """Initialize and return the Chrome driver"""
     chrome_data_dir = os.path.expanduser("~/linkedin_chrome_data")
@@ -32,7 +34,7 @@ def initialize_driver():
     return driver, WebDriverWait(driver, 20)
 
 
-@task
+@task(cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=1))
 def load_commented_posts():
     """Load previously commented posts from CSV"""
     csv_file = 'commented_posts.csv'
@@ -40,7 +42,7 @@ def load_commented_posts():
         return pd.read_csv(csv_file)['author'].tolist()
     return []
 
-@task
+@task(cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=1))
 def save_commented_post(author):
     """Save newly commented post to CSV"""
     csv_file = 'commented_posts.csv'
@@ -53,7 +55,7 @@ def save_commented_post(author):
     df.to_csv(csv_file, index=False)
 
 
-@task
+@task(cache_key_fn=None)  # Disable caching for tasks that use driver
 def collect_posts(driver, wait):
     """Collect and return post details"""
     try:
@@ -86,7 +88,7 @@ def collect_posts(driver, wait):
         return []
 
 
-@task
+@task(cache_key_fn=None)  # Disable caching for tasks that use driver
 def comment_on_posts(driver, wait, post_details):
     """Comment on collected posts"""
     for i, post_to_click in enumerate(post_details):
@@ -164,7 +166,30 @@ def comment_on_posts(driver, wait, post_details):
             continue
 
 
-@flow(name="LinkedIn Welcome Bot")
+@task(cache_key_fn=None)
+def git_operations():
+    """Push changes to Git repository after flow completion"""
+    try:
+        from git import Repo
+        
+        repo = Repo('.')
+        git = repo.git
+        
+        # Add all changes
+        git.add('.')
+        
+        # Create commit with timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        commit_message = f"Update data after flow run - {timestamp}"
+        git.commit('-m', commit_message)
+        
+        # Push changes
+        git.push('origin', 'main')
+        print("Successfully pushed changes to repository")
+    except Exception as e:
+        print(f"Error during Git operations: {e}")
+
+@flow(name="LinkedIn Welcome Bot", log_prints=True)
 def main_flow():
     driver, wait = initialize_driver()
     try:
@@ -176,10 +201,13 @@ def main_flow():
     finally:
         print("Closing browser")
         driver.quit()
+        # Add Git operations after flow completion
+        git_operations()
 
 
 if __name__ == "__main__":
     main_flow()
+    
         
 # %%
 
