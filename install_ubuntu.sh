@@ -2,6 +2,10 @@
 
 echo "🚀 Starting automation setup..."
 
+# Prompt for GitHub token
+echo "Please enter your GitHub Personal Access Token:"
+read -r GITHUB_TOKEN
+
 # Create and track installation directory
 INSTALL_DIR="$HOME/automation_projects/automation_1"
 mkdir -p "$INSTALL_DIR"
@@ -11,11 +15,9 @@ cd "$INSTALL_DIR" || exit 1
 echo "📦 Updating package list..."
 sudo apt-get update
 
-# Install Python if not present
-if ! command -v python3 &> /dev/null; then
-    echo "🐍 Installing Python..."
-    sudo apt-get install -y python3 python3-pip
-fi
+# Install Python and pip if not present
+echo "🐍 Installing Python and pip..."
+sudo apt-get install -y python3 python3-pip
 
 # Install Git if not present
 if ! command -v git &> /dev/null; then
@@ -23,11 +25,19 @@ if ! command -v git &> /dev/null; then
     sudo apt-get install -y git
 fi
 
+# Configure Git with token
+git config --global credential.helper store
+echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials
+
 # Clone repository
 echo "📥 Cloning automation repository..."
-git clone https://github.com/hajkuhar/automation_1.git .
+git clone https://github.com/hajkuron/automation_1.git .
 
-# Install requirements
+# Install prefect first
+echo "📦 Installing Prefect..."
+pip3 install prefect
+
+# Install other requirements
 echo "📦 Installing Python packages..."
 pip3 install -r requirements.txt
 
@@ -43,7 +53,9 @@ Type=simple
 User=$USER
 WorkingDirectory=${INSTALL_DIR}
 Environment="PREFECT_API_KEY=pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J"
-ExecStart=/usr/local/bin/prefect worker start -p ubuntu_pool -t process
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:${HOME}/.local/bin"
+Environment="GITHUB_TOKEN=${GITHUB_TOKEN}"
+ExecStart=${HOME}/.local/bin/prefect worker start -p ubuntu_pool -t process
 Restart=always
 
 [Install]
