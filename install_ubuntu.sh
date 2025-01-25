@@ -11,37 +11,26 @@ INSTALL_DIR="$HOME/automation_projects/automation_1"
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR" || exit 1
 
-# Update package list
+# Update package list and install dependencies
 echo "📦 Updating package list..."
 sudo apt-get update
+sudo apt-get install -y python3-venv python3-pip
 
-# Install Python and pip if not present
-echo "🐍 Installing Python and pip..."
-sudo apt-get install -y python3 python3-pip
-
-# Install Git if not present
-if ! command -v git &> /dev/null; then
-    echo "📥 Installing Git..."
-    sudo apt-get install -y git
-fi
-
-# Configure Git with token
-git config --global credential.helper store
-echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials
+# Create and activate virtual environment
+echo "🐍 Creating Python virtual environment..."
+python3 -m venv venv
+source venv/bin/activate
 
 # Clone repository
 echo "📥 Cloning automation repository..."
 git clone https://github.com/hajkuron/automation_1.git .
 
-# Install prefect first
-echo "📦 Installing Prefect..."
-pip3 install prefect
-
-# Install other requirements
+# Install Python packages in virtual environment
 echo "📦 Installing Python packages..."
-pip3 install -r requirements.txt
+pip install prefect
+pip install -r requirements.txt
 
-# Create systemd service file
+# Create systemd service file with virtual environment path
 echo "🔧 Creating systemd service..."
 sudo tee /etc/systemd/system/prefect-worker.service << EOF
 [Unit]
@@ -53,9 +42,8 @@ Type=simple
 User=$USER
 WorkingDirectory=${INSTALL_DIR}
 Environment="PREFECT_API_KEY=pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J"
-Environment="PATH=/usr/local/bin:/usr/bin:/bin:${HOME}/.local/bin"
 Environment="GITHUB_TOKEN=${GITHUB_TOKEN}"
-ExecStart=${HOME}/.local/bin/prefect worker start -p ubuntu_pool -t process
+ExecStart=${INSTALL_DIR}/venv/bin/prefect worker start -p ubuntu_pool -t process
 Restart=always
 
 [Install]
