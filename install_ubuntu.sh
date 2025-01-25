@@ -43,7 +43,7 @@ Type=simple
 User=$USER
 WorkingDirectory=${INSTALL_DIR}
 Environment="PREFECT_API_KEY=pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J"
-ExecStart=/usr/local/bin/prefect worker start -p local-automation -t process
+ExecStart=/usr/local/bin/prefect worker start -p ubuntu_pool -t process
 Restart=always
 
 [Install]
