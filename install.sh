@@ -17,7 +17,7 @@ fi
 
 # Clone repository
 echo "📥 Downloading automation..."
-git clone https://github.com/yourusername/automation_1.git
+git clone https://github.com/hajkuron/automation_1.git
 cd automation_1
 
 # Install Python if not present
@@ -37,8 +37,11 @@ echo "📦 Installing required packages..."
 pip3 install --user -r requirements.txt
 
 # Set up Prefect
-echo "🔄 Setting up automation scheduler..."
+echo "🔄 Setting up Prefect Cloud..."
 mkdir -p ~/linkedin_chrome_data
+
+# Configure Prefect Cloud
+prefect cloud login --key pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J
 
 # Create LaunchAgent for Prefect
 cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
@@ -53,6 +56,8 @@ cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
         <string>$(which prefect)</string>
         <string>worker</string>
         <string>start</string>
+        <string>-p</string>
+        <string>local-automation</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -62,6 +67,11 @@ cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
     <string>~/Library/Logs/prefect-worker.log</string>
     <key>StandardErrorPath</key>
     <string>~/Library/Logs/prefect-worker-error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PREFECT_API_KEY</key>
+        <string>pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J</string>
+    </dict>
 </dict>
 </plist>
 EOF
@@ -72,8 +82,9 @@ launchctl load ~/Library/LaunchAgents/com.prefect.worker.plist
 echo "
 ✅ Setup Complete! 
 Your automation is now running and will start automatically when you turn on your computer.
+The Prefect worker is connected to the 'local-automation' pool.
 
 To update in the future, just run: ./update.sh
 
-Need help? Contact: your@email.com
+Need help? Contact: [Your Email]
 "
