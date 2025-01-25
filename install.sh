@@ -1,49 +1,33 @@
-Okay so tell me excatly what should I do with this script
 #!/bin/bash
 
 echo "🚀 Starting automation setup..."
 
-# Create projects directory
-echo "📁 Creating project directory..."
-mkdir -p ~/automation_projects
-cd ~/automation_projects
+# Create and track installation directory
+INSTALL_DIR="$HOME/automation_projects/automation_1"
+mkdir -p "$INSTALL_DIR"
+cd "$INSTALL_DIR" || exit 1
 
-# Install Git if not present (Mac-specific)
-if ! command -v git &> /dev/null; then
-    echo "🔧 Installing Git..."
+# Install Homebrew if not present
+if ! command -v brew &> /dev/null; then
+    echo "🍺 Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    brew install git
 fi
-
-# Clone repository
-echo "📥 Downloading automation..."
-git clone https://github.com/hajkuron/automation_1.git
-cd automation_1
 
 # Install Python if not present
 if ! command -v python3 &> /dev/null; then
     echo "🐍 Installing Python..."
-    brew install python@3.11
+    brew install python@3.10
 fi
 
-# Install Chrome if not present
-if ! command -v google-chrome &> /dev/null; then
-    echo "🌐 Installing Chrome..."
-    brew install --cask google-chrome
-fi
+# Clone repository
+echo "📥 Cloning automation repository..."
+git clone https://github.com/hajkuhar/automation_1.git .
 
 # Install requirements
-echo "📦 Installing required packages..."
-pip3 install --user -r requirements.txt
+echo "📦 Installing Python packages..."
+pip3 install -r requirements.txt
 
-# Set up Prefect
-echo "🔄 Setting up Prefect Cloud..."
-mkdir -p ~/linkedin_chrome_data
-
-# Configure Prefect Cloud
-prefect cloud login --key pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J
-
-# Create LaunchAgent for Prefect with explicit pool
+# Create LaunchAgent with correct working directory
 cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -51,9 +35,11 @@ cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
 <dict>
     <key>Label</key>
     <string>com.prefect.worker</string>
+    <key>WorkingDirectory</key>
+    <string>${INSTALL_DIR}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$(which prefect)</string>
+        <string>/opt/homebrew/bin/prefect</string>
         <string>worker</string>
         <string>start</string>
         <string>-p</string>
@@ -66,19 +52,21 @@ cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>~/Library/Logs/prefect-worker.log</string>
+    <string>${HOME}/Library/Logs/prefect-worker.log</string>
     <key>StandardErrorPath</key>
-    <string>~/Library/Logs/prefect-worker-error.log</string>
+    <string>${HOME}/Library/Logs/prefect-worker-error.log</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PREFECT_API_KEY</key>
         <string>pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 </dict>
 </plist>
 EOF
 
-# Start Prefect worker
+# Start the worker
 launchctl load ~/Library/LaunchAgents/com.prefect.worker.plist
 
 echo "
