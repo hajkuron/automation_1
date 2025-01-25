@@ -43,6 +43,7 @@ User=$USER
 WorkingDirectory=${INSTALL_DIR}
 Environment="PREFECT_API_KEY=pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J"
 Environment="GITHUB_TOKEN=${GITHUB_TOKEN}"
+Environment="PREFECT_API_URL=https://api.prefect.cloud/api/accounts/35ea75b4-220d-4af8-8e1f-0e49eea9ed3e/workspaces/cbb914b8-9c4e-4e45-93c4-dfd630f74bb4"
 ExecStart=${INSTALL_DIR}/venv/bin/prefect worker start -p ubuntu_pool -t process
 Restart=always
 
