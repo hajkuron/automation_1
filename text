@@ -1,0 +1,37 @@
+cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.prefect.worker</string>
+    <key>WorkingDirectory</key>
+    <string>/Users/jonkuhar/automation_projects/automation_1</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/jonkuhar/anaconda3/bin/prefect</string>
+        <string>worker</string>
+        <string>start</string>
+        <string>-p</string>
+        <string>local-automation</string>
+        <string>-t</string>
+        <string>process</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/jonkuhar/Library/Logs/prefect-worker.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jonkuhar/Library/Logs/prefect-worker-error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PREFECT_API_KEY</key>
+        <string>pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J</string>
+        <key>PATH</key>
+        <string>/Users/jonkuhar/anaconda3/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>
+EOF

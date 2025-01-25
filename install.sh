@@ -43,7 +43,7 @@ mkdir -p ~/linkedin_chrome_data
 # Configure Prefect Cloud
 prefect cloud login --key pnu_izU73gpf25wpuCTGNx27RB8kGVtzdj2jNB3J
 
-# Create LaunchAgent for Prefect
+# Create LaunchAgent for Prefect with explicit pool
 cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -58,6 +58,8 @@ cat > ~/Library/LaunchAgents/com.prefect.worker.plist << EOF
         <string>start</string>
         <string>-p</string>
         <string>local-automation</string>
+        <string>-t</string>
+        <string>process</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
