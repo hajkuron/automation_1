@@ -1,0 +1,28 @@
+# File for configuring project / deployment build, push and pull steps
+
+# Generic metadata about this project
+name: LinkedIn Welcome Bot
+prefect-version: 2.14.12
+
+# build section not needed since we're not using Docker
+build: []
+
+# push section not needed since we're not using remote storage
+push: []
+
+# pull section to handle working directory
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: "/root/automation_projects/automation_1"
+
+# deployment configuration
+deployments:
+  - name: ubuntu
+    description: "LinkedIn Welcome Bot deployment"
+    entrypoint: "main.py:main_flow"
+    schedule: {}
+    tags: []
+    parameters: {}
+    work_pool:
+      name: ubuntu_pool
+      work_queue_name: default

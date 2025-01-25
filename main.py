@@ -205,7 +205,65 @@ def main_flow():
         git_operations()
 
 
+def check_and_install_system_packages():
+    import subprocess
+    import sys
+    
+    # Common system packages needed for browser automation and Python building
+    system_packages = [
+        'python3-distutils',
+        'python3-dev',
+        'chromium-browser',
+        'chromium-chromedriver',
+        'xvfb',  # For headless browser
+        'libnss3',
+        'libgconf-2-4',
+        'build-essential'  # For compiling Python extensions
+    ]
+    
+    try:
+        # Check if we have sudo access
+        subprocess.run(['sudo', '-n', 'true'], check=True, capture_output=True)
+        
+        # Install system packages
+        subprocess.run(['sudo', 'apt-get', 'update'], check=True)
+        for package in system_packages:
+            try:
+                print(f"Checking/Installing system package: {package}")
+                subprocess.run(['sudo', 'apt-get', 'install', '-y', package], check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Warning: Failed to install system package {package}: {e}")
+                
+    except subprocess.CalledProcessError:
+        print("Warning: No sudo access. System packages may need to be installed manually.")
+
+def setup_python_packages():
+    import subprocess
+    import sys
+    
+    # Python packages needed by your script
+    python_packages = [
+        'undetected-chromedriver',
+        'selenium',
+        'prefect',
+        'pandas',
+        # Add other packages your script needs
+    ]
+    
+    for package in python_packages:
+        try:
+            __import__(package.replace('-', '_'))
+        except ImportError:
+            print(f"Installing Python package: {package}")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+def setup_environment():
+    check_and_install_system_packages()
+    setup_python_packages()
+
+# At the start of your main.py
 if __name__ == "__main__":
+    setup_environment()
     main_flow()
     
         
