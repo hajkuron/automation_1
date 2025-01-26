@@ -13,31 +13,33 @@ from datetime import datetime
 from prefect import task, flow
 from prefect.tasks import task_input_hash
 from datetime import timedelta
+from pyvirtualdisplay import Display
 
 
 @task
 def initialize_driver():
+    # Set up virtual display
+    display = Display(visible=0, size=(1280, 1024))
+    display.start()
+    
     options = uc.ChromeOptions()
     
     # Required options for running in VM/headless environment
     options.add_argument('--no-sandbox')
-    options.add_argument('--headless=new')  # new headless mode for Chrome >= 109
+    options.add_argument('--headless=new')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=1920,1080')
-    options.add_argument('--remote-debugging-port=9222')
-    options.add_argument('--disable-setuid-sandbox')
-    
-    # Add logging
-    options.add_argument('--enable-logging')
-    options.add_argument('--v=1')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-infobars')
+    options.add_argument('--disable-notifications')
+    options.add_argument(f'--display={display.display}')
     
     try:
         driver = uc.Chrome(
             options=options,
-            driver_executable_path='/usr/bin/chromedriver',
-            browser_executable_path='/usr/bin/chromium-browser',
-            version_main=None  # Let it auto-detect
+            driver_executable_path='/usr/local/bin/chromedriver',
+            browser_executable_path='/usr/bin/google-chrome',
+            version_main=132  # Match your Chrome version
         )
         
         wait = WebDriverWait(driver, 20)
@@ -45,15 +47,18 @@ def initialize_driver():
         
     except Exception as e:
         print(f"Chrome startup error: {str(e)}")
-        # Print Chrome version
         import subprocess
         try:
-            chrome_version = subprocess.check_output(['chromium-browser', '--version'])
-            print(f"Chrome version: {chrome_version}")
-            chromedriver_version = subprocess.check_output(['chromedriver', '--version'])
-            print(f"ChromeDriver version: {chromedriver_version}")
-        except:
-            print("Could not get Chrome/ChromeDriver version")
+            print("\nDiagnostic Information:")
+            print("-" * 50)
+            chrome_v = subprocess.getoutput('google-chrome --version')
+            print(f"Chrome version: {chrome_v}")
+            driver_v = subprocess.getoutput('/usr/local/bin/chromedriver --version')
+            print(f"ChromeDriver version: {driver_v}")
+            print(f"DISPLAY variable: {os.environ.get('DISPLAY', 'Not set')}")
+            print("-" * 50)
+        except Exception as diag_e:
+            print(f"Diagnostic error: {diag_e}")
         raise
 
 
