@@ -18,22 +18,43 @@ from datetime import timedelta
 @task
 def initialize_driver():
     options = uc.ChromeOptions()
-    options.add_argument('--headless')  # Run in headless mode
-    options.add_argument('--no-sandbox')  # Required for running as root
-    options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
     
-    # Additional options for stability in VM environment
+    # Required options for running in VM/headless environment
+    options.add_argument('--no-sandbox')
+    options.add_argument('--headless=new')  # new headless mode for Chrome >= 109
+    options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu')
     options.add_argument('--window-size=1920,1080')
+    options.add_argument('--remote-debugging-port=9222')
+    options.add_argument('--disable-setuid-sandbox')
     
-    driver = uc.Chrome(
-        options=options,
-        driver_executable_path='/usr/bin/chromedriver',  # Specify the chromedriver path
-        version_main=None  # Let it auto-detect Chrome version
-    )
+    # Add logging
+    options.add_argument('--enable-logging')
+    options.add_argument('--v=1')
     
-    wait = WebDriverWait(driver, 20)
-    return driver, wait
+    try:
+        driver = uc.Chrome(
+            options=options,
+            driver_executable_path='/usr/bin/chromedriver',
+            browser_executable_path='/usr/bin/chromium-browser',
+            version_main=None  # Let it auto-detect
+        )
+        
+        wait = WebDriverWait(driver, 20)
+        return driver, wait
+        
+    except Exception as e:
+        print(f"Chrome startup error: {str(e)}")
+        # Print Chrome version
+        import subprocess
+        try:
+            chrome_version = subprocess.check_output(['chromium-browser', '--version'])
+            print(f"Chrome version: {chrome_version}")
+            chromedriver_version = subprocess.check_output(['chromedriver', '--version'])
+            print(f"ChromeDriver version: {chromedriver_version}")
+        except:
+            print("Could not get Chrome/ChromeDriver version")
+        raise
 
 
 @task(cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=1))
