@@ -15,23 +15,25 @@ from prefect.tasks import task_input_hash
 from datetime import timedelta
 
 
-@task(cache_key_fn=None)  # Disable caching for driver initialization
+@task
 def initialize_driver():
-    """Initialize and return the Chrome driver"""
-    chrome_data_dir = os.path.expanduser("~/linkedin_chrome_data")
-    if not os.path.exists(chrome_data_dir):
-        os.makedirs(chrome_data_dir)
+    options = uc.ChromeOptions()
+    options.add_argument('--headless')  # Run in headless mode
+    options.add_argument('--no-sandbox')  # Required for running as root
+    options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
     
-    options = Options()
-    options.add_argument(f'--user-data-dir={chrome_data_dir}')
+    # Additional options for stability in VM environment
+    options.add_argument('--disable-gpu')
+    options.add_argument('--window-size=1920,1080')
     
     driver = uc.Chrome(
         options=options,
-        version_main=131,
-        user_data_dir=chrome_data_dir,
-        headless=True  # Also set it here for undetected_chromedriver
+        driver_executable_path='/usr/bin/chromedriver',  # Specify the chromedriver path
+        version_main=None  # Let it auto-detect Chrome version
     )
-    return driver, WebDriverWait(driver, 20)
+    
+    wait = WebDriverWait(driver, 20)
+    return driver, wait
 
 
 @task(cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=1))
@@ -218,7 +220,11 @@ def check_and_install_system_packages():
         'xvfb',  # For headless browser
         'libnss3',
         'libgconf-2-4',
-        'build-essential'  # For compiling Python extensions
+        'build-essential',  # For compiling Python extensions
+        'libxss1',
+        'libasound2',
+        'libxtst6',
+        'libgtk-3-0'
     ]
     
     try:
