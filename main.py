@@ -13,35 +13,25 @@ from datetime import datetime
 from prefect import task, flow
 from prefect.tasks import task_input_hash
 from datetime import timedelta
-from pyvirtualdisplay import Display
 
 
 @task
 def initialize_driver():
-    # Set up virtual display
-    display = Display(visible=0, size=(1280, 1024))
-    display.start()
+    # Set up Chrome profile path
+    profile_path = "/home/user/selenium_project/chrome_profile"
+    os.environ['DISPLAY'] = ':0'
     
     options = uc.ChromeOptions()
-    
-    # Required options for running in VM/headless environment
     options.add_argument('--no-sandbox')
-    options.add_argument('--headless=new')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-extensions')
-    options.add_argument('--disable-infobars')
-    options.add_argument('--disable-notifications')
-    options.add_argument(f'--display={display.display}')
+    options.add_argument('--display=:0')
+    options.add_argument(f'--user-data-dir={profile_path}')
     
     try:
-        driver = uc.Chrome(
-            options=options,
-            driver_executable_path='/usr/local/bin/chromedriver',
-            browser_executable_path='/usr/bin/google-chrome',
-            version_main=132  # Match your Chrome version
-        )
-        
+        print("Starting browser...")
+        driver = uc.Chrome(options=options)
         wait = WebDriverWait(driver, 20)
         return driver, wait
         
@@ -232,70 +222,8 @@ def main_flow():
         # Add Git operations after flow completion
         git_operations()
 
-
-def check_and_install_system_packages():
-    import subprocess
-    import sys
-    
-    # Common system packages needed for browser automation and Python building
-    system_packages = [
-        'python3-distutils',
-        'python3-dev',
-        'chromium-browser',
-        'chromium-chromedriver',
-        'xvfb',  # For headless browser
-        'libnss3',
-        'libgconf-2-4',
-        'build-essential',  # For compiling Python extensions
-        'libxss1',
-        'libasound2',
-        'libxtst6',
-        'libgtk-3-0'
-    ]
-    
-    try:
-        # Check if we have sudo access
-        subprocess.run(['sudo', '-n', 'true'], check=True, capture_output=True)
-        
-        # Install system packages
-        subprocess.run(['sudo', 'apt-get', 'update'], check=True)
-        for package in system_packages:
-            try:
-                print(f"Checking/Installing system package: {package}")
-                subprocess.run(['sudo', 'apt-get', 'install', '-y', package], check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"Warning: Failed to install system package {package}: {e}")
-                
-    except subprocess.CalledProcessError:
-        print("Warning: No sudo access. System packages may need to be installed manually.")
-
-def setup_python_packages():
-    import subprocess
-    import sys
-    
-    # Python packages needed by your script
-    python_packages = [
-        'undetected-chromedriver',
-        'selenium',
-        'prefect',
-        'pandas',
-        # Add other packages your script needs
-    ]
-    
-    for package in python_packages:
-        try:
-            __import__(package.replace('-', '_'))
-        except ImportError:
-            print(f"Installing Python package: {package}")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-def setup_environment():
-    check_and_install_system_packages()
-    setup_python_packages()
-
 # At the start of your main.py
 if __name__ == "__main__":
-    setup_environment()
     main_flow()
     
         
